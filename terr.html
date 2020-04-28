@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="interface.js"></script>
+    <script src="perlin.js"></script>
+</head>
+
+<body>
+    <script async>
+        var canvas = HIcan(512, 512)
+
+        var ctx = canvas.getContext('2d')
+
+        var gWidth = 512,
+            gHeight = 512
+
+
+        var test_camera = new Image(500, 500)
+        test_camera.src = "sprites\\test.png"
+
+        var test_green = new Image(128, 32)
+        test_green.src = "sprites\\test_green_64px.png"
+
+
+        // function scale(num, in_min, in_max, out_min, out_max) {
+        //     return (num - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+        // }
+
+        function Camera(_grid, _w, _h) {
+            this.x = 0;
+            this.y = 0;
+            this.w = _w;
+            this.h = _h;
+            this.maxX = _grid.cols * _grid.tSize - _w;
+            this.maxY = _grid.rows * _grid.tSize - _h;
+        }
+
+        Camera.moveSpeed = 5; // pixels per second
+        Camera.prototype.move = function (dirx, diry) {
+            // move camera
+            this.x += dirx * Camera.moveSpeed;
+            this.y += diry * Camera.moveSpeed;
+            // clamp values
+            this.x = Math.max(0, Math.min(this.x, this.maxX));
+            this.y = Math.max(0, Math.min(this.y, this.maxY));
+
+            // console.log("Max X/Y" + [this.maxX, this.maxY])
+        };
+
+
+        var mapCans = [];
+
+        var grid = {
+            rows: 16,
+            cols: 16,
+            tSize: 32,
+            canLayers: [],
+            map: [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+                    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0,
+                    1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0,
+                    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
+                    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
+                    1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                ]
+            ],
+            getTile: function (_col, _row) {
+                if (this.map) {
+                    return this.map[0][_row * this.cols + _col]
+                }
+            },
+            changeTile: function (_col, _row, _val) {
+                if (this.map) {
+                    this.map[_row * this.cols + _col] = _val
+                }
+            },
+            init: function () {
+                var c = document.createElement('canvas');
+                c.width = 512;
+                c.height = 512;
+                this.canLayers.push(c)
+
+                this.drawMap()
+            },
+            drawMap: function () {
+
+                var context = this.canLayers[0].getContext('2d')
+                context.clearRect(0, 0, 512, 512)
+                context.font = '14px Arial'
+
+                var startCol = ~~(camera.x / this.tSize);
+                var endCol = startCol + (camera.w / this.tSize);
+                var startRow = ~~(camera.y / this.tSize);
+                var endRow = startRow + (camera.h / this.tSize);
+                var offsetX = -camera.x + startCol * this.tSize;
+                var offsetY = -camera.y + startRow * this.tSize;
+
+                // context.fillStyle = 'white'
+
+                for (var c = startCol; c <= endCol; c++) {
+                    for (var r = startRow; r <= endRow; r++) {
+                        var tile = this.getTile(c, r)
+
+                        var x = (c - startCol) * this.tSize + offsetX;
+                        var y = (r - startRow) * this.tSize + offsetY;
+
+                        if (true) { // 0 => empty tile
+                            context.drawImage(
+                                test_green, // image
+                                tile * this.tSize, // source x
+                                0, // source y
+                                this.tSize, // source width
+                                this.tSize, // source height
+                                Math.round(x), // target x
+                                Math.round(y), // target y
+                                this.tSize, // target width
+                                this.tSize // target height
+                            );
+
+                        }
+                    }
+
+                }
+                // context.fillText([offsetX, offsetY], 0, 30)
+            }
+        }
+
+        var camera = new Camera(grid, 512, 512)
+
+        // console.log(grid.getTile(0, 6))
+
+        // grid.changeTile(0, 6, 3)
+
+        // console.log(grid.getTile(0, 6))
+
+        // console.log(mapCanvas)
+
+        var mousePos = {
+            x: 0,
+            y: 0,
+            w: 1,
+            h: 1
+        }
+
+        document.onmousemove = function (evt) {
+            var cRect = canvas.getBoundingClientRect();
+            mousePos.x = evt.clientX - cRect.x
+            mousePos.y = evt.clientY - cRect.y
+        }
+
+        document.onclick = function (evt) {
+            var mX = ~~(mousePos.x / grid.tSize),
+                mY = ~~(mousePos.y / grid.tSize)
+
+            grid.changeTile(mX, mY, 1)
+        }
+
+
+
+        function worldToScreen(x, y) {
+            return {
+                x: x - camera.x,
+                y: y - camera.y
+            };
+        }
+
+        function screenToWorld(x, y) {
+            return {
+                x: x + camera.x,
+                y: y + camera.y
+            };
+        }
+
+
+        var keys = [];
+        document.onkeydown = function (evt) {
+            keys[evt.keyCode] = true;
+            console.log(evt.keyCode)
+        }
+
+        document.onkeyup = function (evt) {
+            keys[evt.keyCode] = false
+        }
+
+        var hasScrolled = false;
+
+        grid.init()
+
+        var dirx = 0,
+            diry = 0
+
+
+
+        update()
+
+        function update() {
+            requestAnimationFrame(update);
+
+            ctx.clearRect(0, 0, 512, 512)
+
+            hasScrolled = false;
+            dirx = 0, diry = 0
+
+            if (keys[37]) {
+                dirx = -1;
+            }
+            if (keys[39]) {
+                dirx = 1;
+            }
+            if (keys[38]) {
+                diry = -1;
+            }
+            if (keys[40]) {
+                diry = 1;
+            }
+
+            if (dirx !== 0 || diry !== 0) {
+                camera.move(dirx, diry);
+                hasScrolled = true;
+            }
+
+            if (hasScrolled) {
+                grid.drawMap(ctx)
+            }
+
+            ctx.drawImage(grid.canLayers[0], 0, 0)
+
+            ctx.fillStyle = 'red'
+            ctx.fillText(hasScrolled, 0, 15)
+
+            ctx.strokeStyle = 'yellow'
+            ctx.strokeRect(camera.x, camera.y, camera.w + 10, camera.h + 10)
+
+            // ctx.fillStyle = 'red'
+            // ctx.fillText(hasScrolled + " " + [camera.x, camera.y], 0, 15)
+            // ctx.fillRect(mousePos.x, mousePos.y, 3, 3)
+            // prevX = camera.x
+            // prevY = camera.y
+
+        }
+    </script>
+</body>
+
+</html>

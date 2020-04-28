@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="interface.js"></script>
+    <script src="entities.js"></script>
+    <style>
+        canvas {
+            /* padding: 0; */
+            /* padding-right: 33%; */
+            margin: auto;
+            display: block;
+            /* float: left; */
+        }
+    </style>
+</head>
+
+<body oncontextmenu="return false;" style='background-color: #383737;'>
+    <div id='gameDiv'>
+        <!-- <div id='gui' style='float: left;'>
+            <button id="" text="Ok"></button>
+            <button id="" text="Ok"></button>
+            <button id="" text="Ok"></button>
+        </div> -->
+    </div>
+    <script>
+        var keys = [];
+
+        var mousePos = {
+            x: 0,
+            y: 0,
+            w: 1,
+            w: 1
+        }
+
+        var mouseState = 0;
+
+        // var gameWidth = 320,
+        //     gameHeight = 320
+
+
+        var gameWidth = 320,
+            gameHeight = 320
+
+        var canvas = HIcan(gameWidth, gameHeight, 2)
+        var ctx = canvas.getContext('2d')
+
+
+        var rows = 10,
+            cols = 10
+
+        var tSize = 32;
+
+        // var damageTowerSprite = new Image(32, 32)
+        // damageTowerSprite.src = 'textures\\damage_tower1.png'
+
+
+
+
+        var whitePath = new Image(32, 32)
+        whitePath.src = 'sprites\\white_path.png'
+
+        var damageTower = new Image(32, 32)
+        damageTower.src = 'sprites\\damage_tower1.png'
+
+        var darkTile = new Image(32, 32)
+        darkTile.src = "sprites\\tile_dark.png"
+
+
+
+        // var map1Sprite = new Image(320, 320)
+        // map1Sprite.src = 'textures\\map_002.png'
+
+        var grid = [
+            0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 1, 0, 0, 0, 0, 1, 1, 1,
+            0, 0, 1, 0, 0, 0, 0, 1, 0, 0,
+            0, 0, 1, 0, 0, 0, 0, 1, 0, 0,
+            0, 0, 1, 0, 0, 0, 0, 1, 0, 0,
+            0, 0, 1, 0, 0, 0, 0, 1, 0, 0,
+            0, 0, 1, 1, 1, 1, 1, 1, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+
+        function drawGrid() {
+            for (var c = 0; c < cols; c++) {
+                for (var r = 0; r < rows; r++) {
+                    var _x = c * tSize;
+                    var _y = r * tSize;
+                    // console.log(grid[c][r])
+
+                    switch (getTile(c, r)) {
+                        case 0:
+                            ctx.drawImage(darkTile, _x, _y, tSize, tSize)
+                            break;
+                        case 1:
+                            ctx.drawImage(whitePath, _x, _y, tSize, tSize)
+                            break;
+                        case 3:
+                            ctx.drawImage(damageTower, _x, _y, tSize, tSize)
+                            break;
+
+                    }
+
+                    // ctx.fillRect(_x, _y, tSize, tSize)
+                }
+            }
+        }
+
+
+        function bulletCol() {
+            var bIndex = 0
+            bullets.forEach(b => {
+
+                b.update()
+                if (b.distance > gameWidth) {
+                    bullets.splice(bIndex, 1);
+                }
+
+                // draw bullet
+                ctx.save()
+                ctx.translate(b.x, b.y)
+                ctx.rotate(b.Angle);
+                ctx.fillStyle = b.color
+                ctx.fillRect(-(b.w / 2) - 4, -(b.h / 2) - 1, b.w, b.h)
+                ctx.restore()
+
+                let enIndex = 0
+                enemies.forEach(en => {
+                    if (rectCollision(en.rect, {
+                            x: b.x,
+                            y: b.y,
+                            w: b.w,
+                            h: b.h
+                        }) && en.type != 'player') {
+                        console.log('bullet collision')
+                        bullets.splice(bIndex, 1);
+                        // entities.splice(enIndex, 1)
+                        enemies.splice(enIndex, 1);
+                        return true;
+                    }
+                    enIndex++
+                })
+                bIndex++
+            })
+
+            return false;
+        }
+
+
+        var mapPoints = []
+
+        function addMapPoint(_x, _y) {
+            mapPoints.push({
+                x: _x,
+                y: _y,
+                w: 5,
+                h: 5
+            })
+        }
+
+        addMapPoint(tSize * 2 + tSize / 2, 0)
+        addMapPoint(tSize * 2 + Math.floor(tSize / 2), tSize * 2 + Math.floor(tSize / 2)) // Top Left
+        addMapPoint(tSize * 2 + Math.floor(tSize / 2), tSize * 7 + Math.floor(tSize / 2)) // Bottom Left
+        addMapPoint(tSize * 7 + Math.floor(tSize / 2), tSize * 7 + Math.floor(tSize / 2)) // Bottom Right
+        addMapPoint(tSize * 7 + Math.floor(tSize / 2), tSize * 2 + Math.floor(tSize / 2)) // Top Right
+        addMapPoint(tSize * cols, tSize * 2 + tSize / 2) // End Point
+
+        var mX = 0,
+            mY = 0
+
+        function getTile(col, row) {
+            return grid[row * cols + col]
+        }
+
+        function changeTile(col, row, val) {
+            grid[row * cols + col] = val
+        }
+
+        document.onmousemove = function (evt) {
+            var cRect = canvas.getBoundingClientRect();
+            mousePos.x = evt.clientX - cRect.x
+            mousePos.y = evt.clientY - cRect.y
+        }
+
+        document.onclick = function (evt) {
+            document.onclick = function () {
+                var tile = getTile(mX, mY)
+                if (tile == 0) {
+                    changeTile(mX, mY, 3)
+                }
+            }
+        }
+
+        var threads = [];
+        var enemies = [];
+        var towers = [];
+        var bullets = [];
+
+        function sThread(_t, func, params) {
+            this.maxTick = _t;
+            this.tick = 0;
+            this.params = params || {};
+            this.fn = func;
+        }
+
+
+        function Tower(_gridX, _gridY) {
+            this.pos = [_gridX, _gridY]
+
+            this.x = _gridX * tSize
+            this.y = _gridY * tSize
+            this.w = tSize
+            this.h = tSize
+
+            this.shootTick = 60
+            this.sTick = 0
+
+            this.update = function () {
+                if (this.sTick >= this.shootTick) {
+                    if (enemies.length > 0) {
+                        bullets.push(new Bullet(this.x, this.y, {
+                            x: enemies[0].x + enemies[0].w / 2,
+                            y: enemies[0].y + enemies[0].h / 2
+                        }, 10))
+                        console.log('shoot')
+                        this.sTick = 0;
+                    }
+                }
+                this.sTick++
+            }
+        }
+
+        threads.push(new sThread(120, function () {
+            enemies.push(new Enemy([mapPoints[0].x - 10, mapPoints[0].y - 30], 20))
+        }))
+
+        function Enemy(_x, _y, _size) {
+            this.x = _x;
+            this.y = _y;
+
+            this.w = _size;
+            this.h = _size;
+
+            this.update = function () {
+
+            }
+
+        }
+
+
+        update()
+
+        function update() {
+            requestAnimationFrame(update)
+
+            mX = Math.floor(mousePos.x / tSize)
+            mY = Math.floor(mousePos.y / tSize)
+
+            // Game Logic
+            threads.forEach(t => {
+                if (t.tick >= t.maxTick) {
+                    t.fn(t.params)
+                    t.tick = 0
+                }
+                t.tick++;
+
+                // console.log(t.tick)
+            })
+
+
+
+            // Logic End
+
+            ctx.clearRect(0, 0, gameWidth, gameHeight)
+
+            // // ctx.drawImage(map1Sprite, 0, 0)
+            // ctx.fillStyle = 'RGB(0, 0, 80)'
+            // ctx.fillRect(0, 0, gameWidth, gameHeight)
+
+
+
+
+            drawGrid()
+
+            try {
+                ctx.strokeStyle = (getTile(mX, mY) == 0) ? 'yellow' : 'red'
+            } catch {
+
+            }
+
+            ctx.strokeRect(mX * tSize, mY * tSize, tSize, tSize)
+
+
+            var pIndex = 0;
+            mapPoints.forEach(_p => {
+                ctx.fillStyle = 'red'
+                ctx.fillRect(_p.x - _p.w / 2, _p.y - _p.h / 2, _p.w, _p.h)
+                pIndex++;
+            })
+
+
+
+            towers.forEach(t => {
+                t.update()
+            })
+
+            enemies.forEach(e => {
+                e.update(mapPoints[e.point])
+                ctx.fillStyle = 'green'
+                ctx.fillRect(e.x, e.y, e.size, e.size)
+            })
+
+            bulletCol()
+
+
+
+            ctx.fillStyle = 'green'
+            ctx.fillText(angle(point, enemies[0]), 10, 15)
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <script>
+        function Item(_name, _damage, _proc) {
+            this.itemName = _name;
+            this.itemDamage = _damage;
+            this.itemChance = _proc;
+
+            this.itemDamageDealt = 0;
+        }
+
+        // function calculate() {
+        //     var aps = document.getElementById('attack_speed_in').value || 1
+        //     var dpa = document.getElementById('attack_damage_in').value || 1
+        //     var ppa = document.getElementById('attack_proc_in').value || 1
+
+        //     var total_dmg = 0;
+        //     // var
+
+
+        //     for (var i = 0; i < 100; i++) {
+        //         if (Math.floor(Math.random() * 5) == 4) {
+        //             total_dmg++;
+        //         }
+        //     }
+        //     console.log('Total Crits: ', total_dmg)
+        // }
+    </script>
+
+    <style>
+        #main-div {
+            display: flex;
+            flex-direction: row;
+        }
+
+        #sub-div {
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="main-div" style="display: flex; flex-direction: row;">
+
+        <div id="sub-div" style='flex-direction: column;'>
+            <label for='attack_speed_in'>Attacks Per Second: </label>
+            <input id='attack_speed_in'>
+        </div>
+        <div id="sub-div">
+            <label for='attack_damage_in'>Damage Per Attack: </label>
+            <input id='attack_damage_in'>
+        </div>
+        <div id="sub-div">
+            <label for='attack_proc_in'>Procs Per Hit: </label>
+            <input id='attack_proc_in'>
+        </div>
+    </div>
+
+    <button id='calc_button' onclick='calculate();'>Calculate</button>
+</body>
+
+</html>
