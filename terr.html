@@ -12,7 +12,6 @@
 <body>
     <script async>
         var canvas = HIcan(512, 512)
-
         var ctx = canvas.getContext('2d')
 
         var gWidth = 512,
@@ -85,7 +84,7 @@
             },
             changeTile: function (_col, _row, _val) {
                 if (this.map) {
-                    this.map[_row * this.cols + _col] = _val
+                    this.map[0][_row * this.cols + _col] = _val
                 }
             },
             init: function () {
