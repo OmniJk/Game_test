@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        function HIcan(w, h, _scale) {
+            var can = document.createElement('canvas')
+
+            _scale = (!_scale) || window.devicePixelRatio / (can.getContext('2d').backingStorePixelRatio || 1);
+            can.width = w * _scale;
+            can.height = h * _scale;
+            can.style.width = w + "px";
+            can.style.height = h + "px";
+            can.getContext("2d").scale(_scale, _scale);
+
+            document.body.appendChild(can);
+
+            return can;
+        }
+
+        var gWidth = 400
+        var canvas = HIcan(gWidth, gWidth, 2)
+        var ctx = canvas.getContext('2d')
+
+        var board = {
+            turn: 0,
+            tick: 0,
+            offSet: 0,
+            // spriteWidth: spriteSheet.width / 6,
+            // spriteHeight: spriteSheet.height / 2,
+            tSize: ~~(gWidth / 8),
+            rows: 8,
+            cols: 8,
+            b: [11, 10, 9, 8, 7, 9, 10, 11,
+                12, 12, 12, 12, 12, 12, 12, 12,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                1, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 1, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                1, 1, 1, 1, 1, 1, 1, 1,
+                2, 3, 4, 5, 6, 4, 3, 2,
+            ],
+            getTile: function (_col, _row) {
+                return this.b[_row * this.cols + _col]
+            },
+            flipBoard: function () {
+                for (var col = 0; col < this.rows; col++) {
+                    for (var row = 0; row < 4; row++) {
+                        // var row = 0
+                        var tmp = this.getTile(col, row)
+                        var tmp2 = this.getTile(col, 8 - 1 - row)
+                        console.log(tmp)
+                        this.changeTile(col, row, tmp2)
+                        // console.log(tmp)
+                        console.log(`Changed ${col+1}/${row+1} to ${tmp2}`)
+                        this.changeTile(col, this.rows - row - 1, tmp)
+                        console.log(`Changed ${col+1}/${this.rows - row - 1 + 1} to ${tmp}`)
+
+                        console.log(tmp)
+                    }
+
+
+                    // var row = 0
+                    // tmp = this.getTile(col, row)
+                    // this.changeTile(col, row, this.getTile(row, 8 - 1 - col))
+                    // this.changeTile(col, 8 - 1 - row, tmp)
+                }
+                console.log('flipped')
+                console.log('\n New Board:', this.b)
+                // return this.b;
+            },
+            returnBoard: function () {
+                return this.b;
+            },
+            changeTile: function (_col, _row, _val) {
+                this.b[_row * this.cols + _col] = _val;
+            }
+        }
+
+        // console.log(`%cBoard: ${board.b}`,
+        //     'background-color: black; color: orange;')
+        // board.flipBoard()
+        // console.log(`%cBoard Flipped: ${board.b}`, 'background-color: black; color: orange;')
+
+        var oldb = board.b.concat()
+        console.log(oldb)
+
+        board.flipBoard()
+        update()
+
+        function update() {
+            requestAnimationFrame(update);
+
+            ctx.fillStyle = 'white'
+            ctx.fillRect(0, 0, gWidth, gWidth)
+
+
+            for (var i = 0; i < board.rows; i++) {
+                for (var j = 0; j < board.cols; j++) {
+                    ctx.fillStyle = 'black'
+                    ctx.fillText(oldb[j * 8 + i], (i * 25), 15 + (j * 25))
+                }
+            }
+
+
+            for (var i = 0; i < board.rows; i++) {
+                for (var j = 0; j < board.cols; j++) {
+                    ctx.fillStyle = 'black'
+                    ctx.fillText(board.getTile(i, j), (i * 25), 15 + (j * 25) + 200)
+                    var _val = oldb[j * 8 + i]
+                    if (_val != board.getTile(i, j)) {
+                        ctx.strokeStyle = 'red'
+                        ctx.strokeRect(i * 25, 15 + (j * 25) + 200 - 13, 13, 13)
+                    }
+                }
+
+                ctx.strokeStyle = 'black'
+                ctx.moveTo(0, 200)
+                ctx.lineTo(200, 200)
+                ctx.stroke()
+            }
+        }
+    </script>
+</body>
+
+</html>

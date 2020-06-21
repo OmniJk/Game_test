@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        function HIcan(w, h, _scale) {
+            var can = document.createElement('canvas')
+
+            _scale = (!_scale) || window.devicePixelRatio / (can.getContext('2d').backingStorePixelRatio || 1);
+            can.width = w * _scale;
+            can.height = h * _scale;
+            can.style.width = w + "px";
+            can.style.height = h + "px";
+            can.getContext("2d").scale(_scale, _scale);
+
+            document.body.appendChild(can);
+
+            return can;
+        }
+
+
+        var gWidth = 450,
+            gHeight = 300
+
+        var canvas = HIcan(gWidth, gHeight, 2)
+        var ctx = canvas.getContext('2d')
+
+
+        function Paddle(_x, _y, _w, _h, _num) {
+
+            this.x = _x;
+            this.y = _y;
+            this.w = _w;
+            this.h = _h;
+
+            // Used to differeniate between 
+            // paddles with keyboard input
+            this.playerNum = _num || 2;
+
+            this.move = function () {
+                if (this.playerNum == 1) {
+                    if (isKeyDown(Keyboard.UP)) {
+                        this.y -= speed;
+                    }
+                    if (isKeyDown(Keyboard.DOWN)) {
+                        this.y += speed;
+                    }
+                } else {
+                    if (isKeyDown(Keyboard.W)) {
+                        this.y -= speed;
+                    }
+                    if (isKeyDown(Keyboard.S)) {
+                        this.y += speed;
+                    }
+                }
+            }
+        }
+
+        var keys = [];
+        document.onkeydown = function (evt) {
+            keys[evt.keyCode] = true;
+            console.log(evt.keyCode)
+        }
+
+        document.onkeyup = function (evt) {
+            keys[evt.keyCode] = false;
+        }
+
+        function isKeyDown(_num) {
+            return keys[_num];
+        }
+
+        var Keyboard = {
+            LEFT: 37,
+            UP: 38,
+            RIGHT: 39,
+            DOWN: 40,
+            A: 65,
+            W: 87,
+            D: 68,
+            S: 83
+        }
+
+        function collision(rect1, rect2) {
+            return (rect1.x < rect2.x + rect2.width &&
+                rect1.x + rect1.width > rect2.x &&
+                rect1.y < rect2.y + rect2.height &&
+                rect1.y + rect1.height > rect2.y)
+        }
+
+        function distance(c1, c2) {
+            var dx = c1.x - c2.x
+            var dy = c1.y - c2.y
+            return Math.sqrt(dx * dx + dy * dy)
+        }
+
+
+        var speed = 2;
+        var friction = 0.3;
+
+        function Ball(_x, _y, _size) {
+            this.x = _x;
+            this.y = _y;
+
+            this.rect = {
+                x: this.x + this.size,
+                y: this.y,
+                w: this.size,
+                h: this.size
+            }
+
+            this.speed = 1;
+
+            this.velX = (~~(Math.random() * 2) == 1) ? -this.speed : this.speed;
+            this.velY = (~~(Math.random() * 2) == 1) ? -this.speed : this.speed;
+
+            this.size = _size;
+            this.dirX = 0;
+            this.dirY = 0;
+
+            this.update = function () {
+
+                this.velX += (this.dirX) ? this.speed : -this.speed;
+                this.velY += (this.dirY) ? this.speed : -this.speed;
+
+                this.x += this.velX;
+                this.y += this.velY;
+
+                this.velX *= friction;
+                this.velY *= friction;
+
+                if (collision(this.rect, {
+                        x: paddle_1.x + paddle_1.w,
+                        y: paddle_1.y,
+                        w: 1,
+                        h: paddle_1.h
+                    })) {
+                    this.dirX = 1
+                    console.log('1')
+                }
+
+                if (collision(this.rect, {
+                        x: paddle_2.x,
+                        y: paddle_2.y,
+                        w: 1,
+                        h: paddle_2.h
+                    })) {
+                    this.dirX = 0
+                    console.log('2')
+                }
+
+                // Bounds checking
+                if (this.x - this.size < 0) {
+                    this.x = this.size;
+                    this.velX = -this.velX;
+                    this.dirX = 1
+                } else if (this.x + this.size >= gWidth) {
+                    this.x = gWidth - this.size
+                    this.velX -= this.velX;
+                    this.dirX = 0
+                }
+                if (this.y - this.size < 0) {
+                    this.y = this.size;
+                    this.velY = -this.velY;
+                    this.dirY = 1
+                } else if (this.y + this.size > gHeight) {
+                    this.y = gHeight - this.size
+                    this.velY = -this.velY;
+                    this.dirY = 0
+                }
+            }
+
+            // if (1) console.log('yes')
+
+            this.draw = function () {
+                // ctx.clearRect(this.x, this.y, this.size, this.size)
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+                ctx.fill();
+
+                ctx.fillStyle = 'red'
+                ctx.fillRect(this.x - this.size, this.y, 1, 1)
+
+                ctx.fillStyle = 'red'
+                ctx.fillRect(this.x + this.size, this.y, 1, 1)
+
+                ctx.fillStyle = 'red'
+                ctx.fillRect(this.x, this.y + this.size, 1, 1)
+
+                ctx.fillStyle = 'red'
+                ctx.fillRect(this.x, this.y - this.size, 1, 1)
+
+
+            }
+        }
+
+        var ball = new Ball(gWidth / 2, gHeight / 2, 10)
+        var paddle_1 = new Paddle(30, gHeight / 2 - 50, 10, 50, 1)
+        var paddle_2 = new Paddle(gWidth - 30 - 10, gHeight / 2 - 50, 10, 50, 2)
+
+
+        update()
+
+        function update() {
+            requestAnimationFrame(update);
+
+            paddle_1.move()
+            paddle_2.move()
+            ball.update();
+
+            ctx.clearRect(0, 0, gWidth, gHeight)
+
+            ctx.fillStyle = 'lightgray'
+            ctx.fillRect(0, 0, gWidth, gHeight)
+
+            ctx.fillStyle = 'red'
+            ctx.fillRect(paddle_1.x, paddle_1.y, paddle_1.w, paddle_1.h)
+            ctx.fillStyle = 'blue'
+            ctx.fillRect(paddle_2.x, paddle_2.y, paddle_2.w, paddle_2.h)
+
+            ctx.fillStyle = 'black'
+            ball.draw();
+
+            // ctx.fillStyle = 'red'
+            // ctx.fillRect(ball.x, ball.y + (ball.size / 2), 2, 2)
+
+            // ctx.fillText(`${ball.x}/${ball.y}`, 0, 15)
+
+        }
+    </script>
+</body>
+
+</html>

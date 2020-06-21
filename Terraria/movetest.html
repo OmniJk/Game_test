@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <script src="interface.js"></script> -->
+
+    <script src="display.js"></script>
+    <script src="engine.js"></script>
+    <script src="tile.js"></script>
+
+    <style>
+        canvas {
+            border: solid yellow 2px;
+        }
+    </style>
+
+    <title>First Real Game? Poggers</title>
+</head>
+
+<body>
+    <script>
+        function HIcan(w, h, _scale) {
+            var can = document.createElement('canvas')
+
+            _scale = (!_scale) || window.devicePixelRatio / (can.getContext('2d').backingStorePixelRatio || 1);
+            can.width = w * _scale;
+            can.height = h * _scale;
+            can.style.width = w + "px";
+            can.style.height = h + "px";
+            can.getContext("2d").scale(_scale, _scale);
+
+            document.body.appendChild(can);
+
+            return can;
+        }
+
+        const _Game = function (_width, _height) {
+
+            // Display based variables
+            this.gameWidth = _width;
+            this.gameHeight = _height;
+            this.canvas = HIcan(this.gameWidth, this.gameHeight)
+            this.context = this.canvas.getContext('2d')
+            this.bufferLayers = (function () {
+                let buffers = [];
+                for (var i = 0; i < map.maps.length; i++) {
+                    var c = document.createElement("canvas")
+                    c.width = this.gameWidth, c.height = this.gameHeight
+                    buffers.push(c)
+                }
+                return buffers;
+            })();
+
+            // Movement based Variables
+            // TODO: Accerleration
+            this.gravity = 0.7;
+            this.friction = 0.85;
+
+            // Input based Variables
+            this.mousePos = {
+                x: 0,
+                y: 0,
+                w: 1,
+                h: 1
+            }
+
+            //54512
+
+            this.keys = [];
+            this.Keyboard = {
+                LEFT: 37,
+                UP: 38,
+                RIGHT: 39,
+                DOWN: 40
+            }
+
+            this.isKeyDown = function (_num) {
+                return this.keys[_num]
+            }
+
+            this.resize = function (_w, _h, _ratio) {
+                if (_h / _w > _ratio) {
+                    this.context.canvas.height = _w * _ratio;
+                    this.context.canvas.width = _w;
+                } else {
+                    this.context.canvas.height = _h;
+                    this.context.canvas.width = _h / _ratio;
+                }
+                this.context.imageSmoothingEnabled = false;
+
+                console.log('resize')
+
+            }
+
+            this.render = function () {
+                this.context.drawImage(this.canvas, 0, 0)
+                // console.log('y')
+            }
+
+            this.fill = function (_color) {
+                this.context.fillStyle = _color;
+                this.context.fillRect(0, 0, this.canvas.width, this.canvas.height)
+                // console.log('y')
+
+            }
+
+            this.drawLayer = function (_index) {
+                try {
+                    this.canvas.drawImage(this.bufferLayers[_index]);
+                } catch (error) {
+                    console.log(error)
+                }
+            }
+
+            this.drawFPS = function () {
+                var current = Date.now();
+                frameC++
+
+                if (current - elapsed >= 100) {
+                    console.log('ok')
+                    avgFPS = frameC / (current - start)
+                    elapsed = current
+                }
+
+                this.context.fillStyle = 'white  '
+                this.context.font = '16px Impact'
+                this.context.fillText(parseInt(avgFPS * 1000), 5, 20)
+                this.context.strokeStyle = 'black'
+                this.context.strokeText(parseInt(avgFPS * 1000), 5, 20);
+            }
+
+
+        }
+
+
+
+        function Player(_x, _y, _size) {
+            this.x = _x;
+            this.y = _y;
+            this.w = _size;
+            this.h = _size;
+
+            this.velX = 0;
+            this.velY = 0;
+
+            this.speed = 2
+            this.jumpForce = 10
+
+            this.jumping = true;
+        }
+
+        Player.prototype.boundsCheck = function (_w, _h) {
+            if (this.x < 0) {
+                this.x = 0;
+                this.velX = 0;
+            } else if (this.x + this.w >= Game.gameWidth) {
+                this.x = Game.gameWidth - this.w
+                this.velX = 0;
+            }
+            if (this.y < 0) {
+                this.y = 0;
+                this.velY = 0;
+            } else if (this.y + this.h > Game.gameHeight) {
+                this.jumping = false
+                this.y = Game.gameHeight - this.h
+                this.velY = 0;
+            }
+        }
+
+        Player.prototype.move = function (_Game) {
+            // apply some friction to y velocity.
+            this.velY += Game.gravity;
+
+            // check the keys and do the movement.
+            if (_Game.isKeyDown(_Game.Keyboard.UP)) {
+                if (!this.jumping) {
+                    console.log('jumping')
+                    this.jumping = true;
+                    this.velY -= this.jumpForce;
+                }
+            }
+            if (_Game.isKeyDown(_Game.Keyboard.DOWN)) {
+                if (this.velY < this.speed) {
+                    this.velY++;
+                }
+            }
+            if (_Game.isKeyDown(_Game.Keyboard.RIGHT)) {
+                if (this.velX < this.speed) {
+                    this.velX++;
+                }
+            }
+            if (_Game.isKeyDown(_Game.Keyboard.LEFT)) {
+                if (this.velX > -this.speed) {
+                    this.velX--;
+                }
+            }
+
+            this.x += this.velX;
+            this.y += this.velY;
+
+            this.velX *= Game.friction;
+            this.velY *= Game.friction;
+
+            this.boundsCheck(300, 150)
+
+        }
+
+        function render(time_stamp) {
+            // Clear Rect
+            Game.context.clearRect(0, 0, Game.gameWidth, Game.gameHeight)
+            // Fill Screen With Gray
+            // display.fill("red")
+            Game.fill('red')
+
+            Game.render()
+
+            Game.context.fillStyle = 'green'
+            Game.context.fillRect(plr.x, plr.y, plr.w, plr.h)
+
+            Game.context.fillStyle = 'green'
+            Game.context.fillText(plr.jumping, 15, 15)
+
+            // // Draw Player
+            // Game.context.fillStyle = '#07f4b1'
+            // Game.context.fillRect(plr.x, plr.y, plr.w, plr.h)
+
+        }
+
+
+
+        var map = {
+            maps: [
+                [1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1,
+                ]
+            ],
+            cols: 6,
+            rows: 3
+        }
+
+        var Game = new _Game(300, 150)
+
+        map.maps.forEach(function (m, _index) {
+            // console.log(_index)
+            Game.bufferLayers.push(document.createElement("canvas"))
+            var ctx = Game.bufferLayers[_index].getContext('2d');
+            var tW = Game.gameWidth / map.cols;
+            var tH = Game.gameHeight / map.rows;
+            for (var i = 0; i < map.cols; i++) {
+                for (var j = 0; j < map.rows; j++) {
+                    ctx.fillStyle = 'blue'
+                    ctx.fillRect(i * tW, j * tH, tW, tH)
+                }
+            }
+        })
+        Game.bufferLayers.forEach(bL => {
+            bL.width = Game.gameWidth;
+            bL.height = Game.gameHeight;
+        })
+        var engine = new Engine(1000 / 30, render, _update)
+        var plr = new Player(150, 50, 15)
+        // var display = new Display(Game.gameWidth, Game.gameHeight)
+
+        engine.start()
+
+        function _update(time_step) {
+            // requestAnimationFrame(update)
+
+            engine.update()
+            plr.move(Game)
+
+            // Game.context.fillText(plrColor, 15, 30)
+        }
+
+        // function update() {
+        //     requestAnimationFrame(update);
+
+        // }
+
+
+        // Game.context.fillText(...Engine.log_info, 15, 15)
+
+        var resize = function (event) {
+            Game.resize(document.documentElement.clientWidth - 32, document.documentElement.clientHeight - 32,
+                Game.gameHeight / Game.gameWidth);
+        }
+
+        window.addEventListener('resize', resize);
+
+        document.onkeydown = function (evt) {
+            Game.keys[evt.keyCode] = true
+            console.log(evt.keyCode)
+        }
+
+        document.onkeyup = function (evt) {
+            Game.keys[evt.keyCode] = false
+        }
+
+        document.onmousemove = function (evt) {
+            var cRect = Game.canvas.getBoundingClientRect();
+            Game.mousePos.x = evt.clientX - cRect.x
+            Game.mousePos.y = evt.clientY - cRect.y
+        }
+
+
+
+
+        // function getSlopeAngle(s1, s2) {
+        //     return Math.atan((s2.y - s1.y) / (s2.x - s1.x)) * 180 / Math.PI;
+        // }
+
+        // function color_from_hue(hue) {
+        //     var h = hue / 60;
+        //     var c = 255;
+        //     var x = (1 - Math.abs(h % 2 - 1)) * 255;
+        //     var color;
+
+        //     var i = Math.floor(h);
+        //     if (i == 0) color = rgb_to_hex(c, x, 0);
+        //     else if (i == 1) color = rgb_to_hex(x, c, 0);
+        //     else if (i == 2) color = rgb_to_hex(0, c, x);
+        //     else if (i == 3) color = rgb_to_hex(0, x, c);
+        //     else if (i == 4) color = rgb_to_hex(x, 0, c);
+        //     else color = rgb_to_hex(c, 0, x);
+
+        //     return color;
+        // }
+
+        // function rgb_to_hex(red, green, blue) {
+        //     var h = ((red << 16) | (green << 8) | (blue)).toString(16);
+        //     // add the beginning zeros
+        //     while (h.length < 6) h = '0' + h;
+        //     return '#' + h;
+        // }
+    </script>
+</body>
+
+</html>

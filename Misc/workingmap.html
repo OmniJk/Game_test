@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        function HIcan(w, h, _scale) {
+            var can = document.createElement('canvas')
+
+            _scale = (!_scale) || window.devicePixelRatio / (can.getContext('2d').backingStorePixelRatio || 1);
+            can.width = w * _scale;
+            can.height = h * _scale;
+            can.style.width = w + "px";
+            can.style.height = h + "px";
+            can.getContext("2d").scale(_scale, _scale);
+
+            document.body.appendChild(can);
+
+            return can;
+        }
+
+        function scale(num, in_min, in_max, out_min, out_max) {
+            return (num - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+        }
+
+        var gWidth = gHeight = 200
+
+        var canvas = HIcan(gWidth, gHeight, 2)
+        var ctx = canvas.getContext('2d')
+
+
+        function Camera(_grid, _w, _h) {
+            this.x = 0;
+            this.y = 0;
+            this.w = _w;
+            this.h = _h;
+            this.maxX = _grid.cols * _grid.tSize - _w;
+            this.maxY = _grid.rows * _grid.tSize - _h;
+        }
+
+        Camera.moveSpeed = 3; // pixels per second
+        Camera.prototype.move = function (dirx, diry) {
+            // move camera
+            this.x += dirx * Camera.moveSpeed;
+            this.y += diry * Camera.moveSpeed;
+            // clamp values
+            this.x = Math.max(0, Math.min(this.x, this.maxX));
+            this.y = Math.max(0, Math.min(this.y, this.maxY));
+
+            // console.log("Max X/Y" + [this.maxX, this.maxY])
+        };
+
+
+        function Bullet(_origin, _target, _flags = undefined) {
+            this.x = _origin[0];
+            this.y = _origin[1];
+
+            this.w = 10;
+            this.h = 3;
+
+            this.angle = 0;
+            this.speed = 5;
+
+            this.distance = 0;
+
+
+            if (_flags !== undefined) {
+                console.log('y')
+                // if (_flags.homing !== undefined) {
+                //     console.log('homing')
+                //     this.angle = Math.atan2(_target[1] - this.y, _target[0] - this.x)
+                // }
+            } else {
+                this.angle = Math.atan2(_target[1] - this.y, _target[0] - this.x);
+                console.log('n');
+            }
+
+            this.update = function () {
+                this.x += Math.cos(this.angle) * this.speed;
+                this.y += Math.sin(this.angle) * this.speed;
+
+                this.distance += this.speed;
+            }
+
+            this.draw = function () {
+                ctx.fillStyle = 'red'
+
+                ctx.save()
+                ctx.translate(this.x, this.y)
+                ctx.rotate(this.angle)
+                ctx.fillRect(-this.w / 2, this.h / 2, this.w, this.h)
+                ctx.restore()
+            }
+        }
+
+        /* 
+        _tileX (int): X position of tile relative to grid 
+        _tileY (int): Same as above
+        */
+        function Tower(_tileX, _tileY) {
+            this.tX = _tileX;
+            this.tY = _tileY;
+
+            this.target = undefined
+
+            this.findTarget = function (_type, _enemies) {
+                switch (_type) {
+                    case 'first':
+                        this.target = _enemies[_enemies.length - 1]
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            this.shoot = function () {
+
+            }
+
+        }
+
+        var test_image = new Image();
+        test_image.src = 'sprites\\test_green_64px.png'
+
+        var bullets = [];
+        var towers = [];
+        var enemies = [];
+
+        var grid = {
+            rows: 15,
+            cols: 15,
+            tSize: 20,
+            canLayers: [],
+            map: [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+                    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0,
+                    1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0,
+                    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1,
+                    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0,
+                    1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+                    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+                ]
+            ],
+            getTile: function (_col, _row) {
+                if (this.map) {
+                    return this.map[0][_row * this.cols + _col]
+                }
+            },
+            changeTile: function (_col, _row, _val) {
+                if (this.map) {
+                    this.map[0][_row * this.cols + _col] = _val
+                }
+            },
+            init: function () {
+                var c = document.createElement('canvas');
+                c.width = gWidth;
+                c.height = gHeight;
+                this.canLayers.push(c)
+
+                this.drawMap()
+            },
+            drawMap: function () {
+
+                var context = this.canLayers[0].getContext('2d')
+                context.clearRect(0, 0, 512, 512)
+                context.font = '14px Arial'
+
+                var startCol = ~~(camera.x / this.tSize);
+                var endCol = startCol + (camera.w / this.tSize);
+                var startRow = ~~(camera.y / this.tSize);
+                var endRow = startRow + (camera.h / this.tSize);
+                var offsetX = -camera.x + startCol * this.tSize;
+                var offsetY = -camera.y + startRow * this.tSize;
+
+                // context.fillStyle = 'white'
+
+                for (var c = startCol; c <= endCol; c++) {
+                    for (var r = startRow; r <= endRow; r++) {
+                        var tile = this.getTile(c, r)
+
+                        var x = (c - startCol) * this.tSize + offsetX;
+                        var y = (r - startRow) * this.tSize + offsetY;
+
+                        if (true) { // 0 => empty tile
+                            context.drawImage(test_image, // image
+                                tile * this.tSize, // source x
+                                0, // source y
+                                this.tSize, // source width
+                                this.tSize, // source height
+                                Math.round(x), // target x
+                                Math.round(y), // target y
+                                this.tSize, // target width
+                                this.tSize // target height
+                            );
+
+                        }
+                    }
+
+                }
+                // context.fillText([offsetX, offsetY], 0, 30)
+            }
+        }
+
+
+        var camera = new Camera(grid, gWidth, gHeight)
+        grid.init()
+
+        var mouse = {
+            x: 0,
+            y: 0,
+            w: 1,
+            h: 1,
+            tX: 0,
+            tY: 0,
+            dX: 0,
+            dY: 0
+        };
+
+
+        document.onmousemove = function (evt) {
+            var rect = canvas.getBoundingClientRect()
+
+            var _x = evt.clientX - rect.x
+            var _y = evt.clientY - rect.y
+
+            mouse.x = _x;
+            mouse.y = _y;
+        };
+
+        document.onclick = function () {
+            bullets.push(new Bullet([gWidth / 2, gHeight / 2], [mouse.x, mouse.y]))
+        };
+
+        document.onkeydown = function (evt) {
+            keys[evt.keyCode] = true;
+        };
+
+        document.onkeyup = function (evt) {
+            keys[evt.keyCode] = false;
+        }
+
+        var keys = [];
+        var hasScrolled = false;
+
+        (function animate() {
+            requestAnimationFrame(animate);
+
+            ctx.clearRect(0, 0, gWidth, gHeight)
+            // ctx.fillStyle = 'slategrey'
+            // ctx.fillRect(0, 0, gWidth, gHeight)
+
+            hasScrolled = false;
+            dirx = 0, diry = 0
+
+            if (keys[37]) {
+                dirx = -1;
+            }
+            if (keys[39]) {
+                dirx = 1;
+            }
+            if (keys[38]) {
+                diry = -1;
+            }
+            if (keys[40]) {
+                diry = 1;
+            }
+
+            if (dirx !== 0 || diry !== 0) {
+                camera.move(dirx, diry);
+                hasScrolled = true;
+            }
+
+            if (hasScrolled) {
+                ctx.clearRect(0, 0, gWidth, gHeight)
+                grid.drawMap()
+            }
+
+            ctx.drawImage(grid.canLayers[0], 0, 0)
+
+            ctx.fillStyle = 'red'
+            ctx.fillText(hasScrolled, 0, 15)
+
+            // ctx.strokeStyle = 'yellow'
+            // ctx.strokeRect(camera.x, camera.y, camera.w + 10, camera.h + 10)
+
+            bullets.forEach((b, bIndex) => {
+                b.update()
+
+                if (b.distance > 300) {
+                    bullets.splice(bIndex, 1)
+                }
+
+                b.draw()
+
+                ctx.fillStyle = 'red'
+                ctx.font = '16px Arial'
+
+                ctx.fillText([b.x.toFixed(0), b.y.toFixed(0)], 0, 15 + 15 * bIndex)
+            });
+        })();
+    </script>
+</body>
+
+</html>

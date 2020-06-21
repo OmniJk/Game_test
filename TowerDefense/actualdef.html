@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        function HIcan(w, h, _scale) {
+            var can = document.createElement('canvas')
+
+            _scale = (!_scale) || window.devicePixelRatio / (can.getContext('2d').backingStorePixelRatio || 1);
+            can.width = w * _scale;
+            can.height = h * _scale;
+            can.style.width = w + "px";
+            can.style.height = h + "px";
+            can.getContext("2d").scale(_scale, _scale);
+
+            document.body.appendChild(can);
+
+            return can;
+        }
+
+        function scale(num, in_min, in_max, out_min, out_max) {
+            return (num - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+        }
+
+        var gWidth = gHeight = 32 * 15
+
+        var canvas = HIcan(gWidth, gHeight, 2)
+        var ctx = canvas.getContext('2d')
+
+        ctx.font = '20px arial'
+
+        function Bullet(_origin, _target, _flags = undefined) {
+            this.x = _origin[0];
+            this.y = _origin[1];
+
+            this.w = 10;
+            this.h = 3;
+
+            this.angle = 0;
+            this.speed = 5;
+
+            this.distance = 0;
+
+
+            if (_flags !== undefined) {
+                console.log('y')
+                // if (_flags.homing !== undefined) {
+                //     console.log('homing')
+                //     this.angle = Math.atan2(_target[1] - this.y, _target[0] - this.x)
+                // }
+            } else {
+                this.angle = Math.atan2(_target[1] - this.y, _target[0] - this.x);
+                console.log('n');
+            }
+
+            this.update = function () {
+                this.x += Math.cos(this.angle) * this.speed;
+                this.y += Math.sin(this.angle) * this.speed;
+
+                this.distance += this.speed;
+            }
+
+            this.draw = function () {
+                ctx.fillStyle = 'red'
+
+                ctx.save()
+                ctx.translate(this.x, this.y)
+                ctx.rotate(this.angle)
+                ctx.fillRect(-this.w / 2, this.h / 2, this.w, this.h)
+                ctx.restore()
+            }
+        }
+
+        /* 
+        _tileX (int): X position of tile relative to grid 
+        _tileY (int): Same as above
+        */
+        function Tower(_tileX, _tileY, _target) {
+            this.tX = _tileX;
+            this.tY = _tileY;
+
+            this.target = undefined
+
+            this.shootTick = 0;
+            this.maxShootTick = 120;
+
+            this.findTarget = function (_type, _enemies) {
+                switch (_type) {
+                    case 'first':
+                        this.target = _enemies[_enemies.length - 1]
+                        break;
+                    default:
+                        this.target = _enemies[_enemies.length - 1]
+                        break;
+                }
+            }
+
+            this.update = function () {
+                if (this.shootTick >= this.maxShootTick) {
+                    this.shoot();
+                    this.shootTick = 0;
+                }
+            }
+
+            this.shoot = function () {
+                bullets.push(new Bullet([this.tX * grid.tSize + grid.tSize / 2, this.tY * grid.tSize + grid.tSize /
+                    2
+                ], [this.target.x, this.target.y]))
+            }
+        }
+
+        function Point(_tX, _tY, _type = 'default') {
+            this.x = _tX;
+            this.y = _tY;
+
+            this.type = (_type == 'default' || _type == 'first' || _type ==
+                'last') ? _type : 'default';
+        }
+
+        var test_image = new Image();
+        test_image.src = 'sprites\\test_green_64px.png'
+
+        var tower_sprites = new Image();
+        tower_sprites.src = 'sprites\\tower_sprites.png'
+
+        var bullets = [];
+        var towers = [];
+        var enemies = [];
+        var enemyPoints = [];
+
+        enemyPoints.push(new Point(3, 0, 'first'))
+        enemyPoints.push(new Point(3, 7))
+        enemyPoints.push(new Point(11, 7))
+        enemyPoints.push(new Point(11, 15, 'last'))
+
+        var map = [];
+
+        for (var i = 0; i < 15; i++) {
+            for (var j = 0; j < 15; j++) {
+                map.push(0)
+            }
+        }
+
+        var grid = {
+            rows: 15,
+            cols: 15,
+            tSize: 32,
+            canLayers: [],
+            map: [
+                [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+                ]
+                // [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                //     1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+                //     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                //     1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0,
+                //     1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0,
+                //     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1,
+                //     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0,
+                //     1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                //     1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+                //     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                //     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                //     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                //     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                //     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                //     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+                // ]
+            ],
+            getTile: function (_col, _row) {
+                if (this.map) {
+                    return this.map[0][_row * this.cols + _col]
+                }
+            },
+            changeTile: function (_col, _row, _val) {
+                if (this.map) {
+                    this.map[0][_row * this.cols + _col] = _val
+                }
+            },
+            drawMap: function () {
+                for (var c = 0; c < this.cols; c++) {
+                    for (var r = 0; r < this.rows; r++) {
+                        var _tileVal = this.getTile(c, r)
+
+                        var _x = c * this.tSize;
+                        var _y = r * this.tSize;
+
+                        switch (_tileVal) {
+                            default:
+                                break;
+                            case 1:
+                                ctx.fillStyle = 'navy'
+                                ctx.fillRect(_x, _y, this.tSize, this.tSize)
+                                break;
+                            case 2:
+                                ctx.fillStyle = 'darkgrey'
+                                ctx.fillRect(_x, _y, this.tSize, this.tSize)
+                                break;
+                            case 3:
+                                ctx.drawImage(tower_sprites, (_tileVal * this.tSize) - (3 * this.tSize), 0, this
+                                    .tSize,
+                                    this.tSize, _x, _y, this.tSize, this.tSize)
+                                break;
+                        }
+
+                    }
+                }
+            }
+        }
+
+        var mouse = {
+            x: 0,
+            y: 0,
+            w: 1,
+            h: 1,
+            tX: 0,
+            tY: 0,
+            dX: 0,
+            dY: 0
+        };
+
+        document.onmousemove = function (evt) {
+            var rect = canvas.getBoundingClientRect()
+
+            var _x = evt.clientX - rect.x
+            var _y = evt.clientY - rect.y
+
+            mouse.x = _x;
+            mouse.y = _y;
+
+            mouse.tX = ~~(mouse.x / grid.tSize)
+            mouse.tY = ~~(mouse.y / grid.tSize)
+        };
+
+        document.onclick = function () {
+            if (grid.getTile(mouse.tX, mouse.tY) == 0) {
+                var _tX = ~~(mouse.x / grid.tSize),
+                    _tY = ~~(mouse.y / grid.tSize)
+                grid.changeTile(_tX, _tY, 3)
+                towers.push(new Tower(_tX, _tY))
+            }
+            // bullets.push(new Bullet([gWidth / 2, gHeight / 2], [mouse.x, mouse.y]))
+        };
+
+        document.onkeydown = function (evt) {
+            keys[evt.keyCode] = true;
+        };
+
+        document.onkeyup = function (evt) {
+            keys[evt.keyCode] = false;
+        }
+
+        function Timer(_seconds, _func, _args = undefined, _funcObject = undefined) {
+            this.tick = 0;
+            this.maxTick = ~~(_seconds * 60)
+            this.active = true
+            // this.callback = _func
+
+            this.update = function () {
+                if (this.active) {
+                    if (this.tick >= this.maxTick) {
+                        if (_funcObject) _func.call(_funcObject)
+                        else _func()
+                        this.deactivate()
+                        this.tick = 0;
+
+                    }
+                    this.tick++;
+                }
+            }
+
+            this.activate = function () {
+                this.active = true;
+            }
+
+            this.deactivate = function () {
+                this.active = false;
+            }
+        }
+
+        function spawnEnemy() {
+            enemies.push(new Enemy(1));
+            console.log('spawned enemy')
+        }
+
+        function Enemy(_val) {
+            this.x = 0;
+            this.y = 0;
+            this.w = grid.tSize;
+            this.h = grid.tSize;
+
+            this.value = _val;
+
+            this.moveTo = function () {
+
+            }
+        }
+
+        var timers = []
+        timers.push(new Timer(0.5, spawnEnemy, []))
+
+        var keys = [];
+        var hasScrolled = false;
+
+        var centerX = gWidth / 2;
+        var centerY = gHeight / 2;
+
+        (function animate() {
+            requestAnimationFrame(animate);
+
+            ctx.clearRect(0, 0, gWidth, gHeight)
+            ctx.fillStyle = 'slategrey'
+            ctx.fillRect(0, 0, gWidth, gHeight)
+
+            grid.drawMap()
+
+            // ctx.fillStyle = 'pink'
+            // ctx.save()
+            // ctx.translate(gWidth / 2, gHeight / 2)
+            // ctx.rotate(180 * Math.PI / 180)
+            // ctx.arc(0, 0, 15, 0, Math.PI)
+            // ctx.fill()
+            // ctx.restore()
+            // ctx.arc(centerX + 15, centerY + 30, 15, 0, 1.5 * Math.PI)
+
+
+            // ctx.fillStyle = '#ffedf9'
+            // ctx.fillRect(centerX - 15, centerY, 30, 30)
+
+            // ctx.moveTo(centerX - 15, centerY + 30)
+            // ctx.arc(15, 0, 1.5 * Math.PI)
+            // ctx.fill()
+
+            ctx.strokeStyle = 'yellow'
+            ctx.strokeRect(mouse.tX * grid.tSize, mouse.tY * grid.tSize, grid.tSize, grid.tSize)
+
+            timers.forEach(_t => {
+                _t.update();
+                if (!_t.active) {
+                    t.activate()
+                }
+            })
+
+            towers.forEach((t, tIndex) => {
+                t.update()
+            })
+
+            bullets.forEach((b, bIndex) => {
+                b.update()
+
+                if (b.distance > 300) {
+                    bullets.splice(bIndex, 1)
+                }
+
+                b.draw()
+
+                ctx.fillStyle = 'red'
+                ctx.font = '16px Arial'
+
+                ctx.fillText([b.x.toFixed(0), b.y.toFixed(0)], 0, 15 + 15 * bIndex)
+            });
+
+            ctx.fillStyle = 'red'
+            ctx.fillText([mouse.tX, mouse.tY], 0, 15)
+        })();
+    </script>
+</body>
+
+</html>

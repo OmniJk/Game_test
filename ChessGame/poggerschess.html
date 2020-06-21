@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        function HIcan(w, h, _scale) {
+            var can = document.createElement('canvas')
+
+            _scale = (!_scale) || window.devicePixelRatio / (can.getContext('2d').backingStorePixelRatio || 1);
+            can.width = w * _scale;
+            can.height = h * _scale;
+            can.style.width = w + "px";
+            can.style.height = h + "px";
+            can.getContext("2d").scale(_scale, _scale);
+
+            document.body.appendChild(can);
+
+            return can;
+        }
+
+        function scale(num, in_min, in_max, out_min, out_max) {
+            return (num - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+        }
+
+        var gWidth = gHeight = 400
+
+        var canvas = HIcan(gWidth, gHeight, 2)
+        var ctx = canvas.getContext('2d')
+
+        // var tSize = ~~(gWidth / 8)
+        // var rows = ~~(gWidth / tSize)
+
+        var spriteSheet = new Image();
+        spriteSheet.src = 'sprites\\chesssheet.png'
+
+        // var imgs = document.images,
+        //     len = imgs.length,
+        //     counter = 0;
+
+        // [].forEach.call(imgs, function (img) {
+        //     if (img.complete)
+        //         incrementCounter();
+        //     else
+        //         img.addEventListener('load', incrementCounter, false);
+        // });
+
+        // function incrementCounter() {
+        //     counter++;
+        //     if (counter === len) {
+        //         console.log('All images loaded!');
+        //         update()
+        //     }
+        // }
+
+        function Board() {
+            this.turn = 0;
+            this.tick = 0;
+            this.offSet = 0;
+            this.width = 400;
+            this.height = 400;
+            this.spriteWidth = spriteSheet.width / 6;
+            this.spriteHeight = spriteSheet.height / 2;
+            this.rows = 8;
+            this.cols = 8;
+            this.tSize = ~~(this.width / this.rows);
+            this.board = [11, 10, 9, 8, 7, 9, 10, 11,
+                12, 12, 12, 12, 12, 12, 12, 12,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                1, 1, 1, 1, 1, 1, 1, 1,
+                2, 3, 4, 5, 6, 4, 3, 2,
+            ];
+            this.getTile = function (_col, _row) {
+                return this.board[_row * this.cols + _col]
+            };
+            this.changeTile = function (_col, _row, _val) {
+                this.board[_row * this.cols + _col] = _val;
+            };
+            this.drawTile = function (_x, _y, _val) {
+                switch (_val) {
+                    case 0:
+                        break;
+                    case 1:
+                        ctx.drawImage(spriteSheet, this.spriteWidth * 0, this.spriteHeight * 0,
+                            this
+                            .spriteWidth, this.spriteHeight, _x, _y, this.tSize, this.tSize)
+                        break;
+                    case 2:
+                        ctx.drawImage(spriteSheet, this.spriteWidth * 1, this.spriteHeight * 0,
+                            this
+                            .spriteWidth, this.spriteHeight, _x, _y, this.tSize, this.tSize)
+                        break;
+                    case 3:
+                        ctx.drawImage(spriteSheet, this.spriteWidth * 2, this.spriteHeight * 0,
+                            this
+                            .spriteWidth, this.spriteHeight, _x, _y, this.tSize, this.tSize)
+                        break;
+                    case 4:
+                        ctx.drawImage(spriteSheet, this.spriteWidth * 3, this.spriteHeight * 0,
+                            this
+                            .spriteWidth, this.spriteHeight, _x, _y, this.tSize, this.tSize)
+                        break;
+                    case 5:
+                        ctx.drawImage(spriteSheet, this.spriteWidth * 4, this.spriteHeight * 0,
+                            this
+                            .spriteWidth, this.spriteHeight, _x, _y, this.tSize, this.tSize)
+                        break;
+                    case 6:
+                        ctx.drawImage(spriteSheet, this.spriteWidth * 5, this.spriteHeight * 0,
+                            this
+                            .spriteWidth, this.spriteHeight, _x, _y, this.tSize, this.tSize)
+                        break;
+                    case 7:
+                        ctx.drawImage(spriteSheet, this.spriteWidth * 0, this.spriteHeight * 1,
+                            this
+                            .spriteWidth, this.spriteHeight, _x, _y, this.tSize, this.tSize)
+                        break;
+                    case 8:
+                        ctx.drawImage(spriteSheet, this.spriteWidth * 1, this.spriteHeight * 1,
+                            this
+                            .spriteWidth, this.spriteHeight, _x, _y, this.tSize, this.tSize)
+                        break;
+                    case 9:
+                        ctx.drawImage(spriteSheet, this.spriteWidth * 2, this.spriteHeight * 1,
+                            this
+                            .spriteWidth, this.spriteHeight, _x, _y, this.tSize, this.tSize)
+                        break;
+                    case 10:
+                        ctx.drawImage(spriteSheet, this.spriteWidth * 3, this.spriteHeight * 1,
+                            this
+                            .spriteWidth, this.spriteHeight, _x, _y, this.tSize, this.tSize)
+                        break;
+                    case 11:
+                        ctx.drawImage(spriteSheet, this.spriteWidth * 4, this.spriteHeight * 1,
+                            this
+                            .spriteWidth, this.spriteHeight, _x, _y, this.tSize, this.tSize)
+                        break;
+                    case 12:
+                        ctx.drawImage(spriteSheet, this.spriteWidth * 5, this.spriteHeight * 1,
+                            this
+                            .spriteWidth, this.spriteHeight, _x, _y, this.tSize, this.tSize)
+                        break;
+                    default:
+                        break;
+                }
+            };
+            this.findMoves = function (_tX, _tY) {
+                var moves = [] // Array to store vectors (coords)
+                var _val = this.getTile(_tX, _tY)
+
+                // King Move Checking
+                // All tiles (excluding center) in 1-tile range
+                if (_val > 0) {
+                    if (_val == 1 || _val == 12) {
+                        if (_tY != this.rows - 2) {
+                            moves.push([_tX, _tY - 1])
+                        } else {
+                            moves.push([_tX, _tY - 1])
+                            moves.push([_tX, _tY - 2])
+                        }
+                    } else if (_val == 2 || _val == 11) {
+                        for (var i = _tX; i > 0; i--) { // Left Side Row Checking
+                            if (board.getTile(i, _tY) != 0) {
+                                break;
+                            } else {
+                                moves.push([i, _tY])
+                            }
+                        }
+                        for (var i = _tX; i < board.cols; i++) { // Right Side Row Checking
+                            if (board.getTile(i, _tY) != 0) {
+                                break;
+                            } else {
+                                moves.push([i, _tY])
+                            }
+                        }
+                        for (var i = _tY; i > 0; i--) { // Up Side Row Checking
+                            if (board.getTile(_tX, i) != 0) {
+                                break;
+                            } else {
+                                moves.push([i, _tY])
+                            }
+                        }
+                        for (var i = _tY; i < board.rows; i++) { // Down Side Row Checking
+                            if (board.getTile(_tX, i) != 0) {
+                                break;
+                            } else {
+                                moves.push([i, _tY])
+                            }
+                        }
+                    } else if (_val == 3 || _val == 10) {
+
+                    } else if (_val == 4 || _val == 9) {
+
+                    } else if (_val == 5 || _val == 8) {
+
+                    } else if (_val == 6 || _val == 7) {
+                        // moves.push([_tX - 1, _tY])
+                        // moves.push([_tX - 1, _tY - 1])
+                        // moves.push([_tX - 1, _tY + 1])
+                        // moves.push([_tX, _tY + 1])
+                        // moves.push([_tX, _tY - 1])
+                        // moves.push([_tX + 1, _tY])
+                        // moves.push([_tX + 1, _tY + 1])
+                        // moves.push([_tX + 1, _tY - 1])
+
+                        for (var i = _tX - 1; i < _tX + 2; i++) {
+                            for (var j = _tY - 1; j < _tY + 2; j++) {
+                                if (this.getTile(i, j) == 0) {
+                                    moves.push([i, j])
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return moves;
+            };
+            // this.flipBoard = function () {
+            //     for (var col = 0; col < this.cols; col++) {
+            //         for (var row = 0; row < this.rows / 2; row++) {
+            //             // var row = 0
+            //             var tmp = this.getTile(col, row)
+            //             var tmp2 = this.getTile(col, 8 - 1 - row)
+            //             // console.log(tmp)
+            //             this.changeTile(col, row, tmp2)
+            //             // console.log(tmp)
+            //             // console.log(`Changed ${col+1}/${row+1} to ${tmp2}`)
+            //             this.changeTile(col, this.rows - row - 1, tmp)
+            //             // console.log(`Changed ${col+1}/${this.rows - row - 1 + 1} to ${tmp}`)
+
+            //             // console.log(tmp)
+            //         }
+            //         // var row = 0
+            //         // tmp = this.getTile(col, row)
+            //         // this.changeTile(col, row, this.getTile(row, 8 - 1 - col))
+            //         // this.changeTile(col, 8 - 1 - row, tmp)
+            //     }
+            //     console.log('flipped')
+            //     // console.log('\n New Board=', this.b)
+            //     // return this.b;
+            // };
+            this.drawGrid = function () {
+                /////////////////////
+                // Board Drawing Code
+                for (var c = 0; c < this.cols; c++) {
+                    for (var r = 0; r < this.rows; r++) {
+                        var _x = c * this.tSize;
+                        var _y = r * this.tSize;
+                        this.tick = (this.tick == 0) ? 1 : 0
+                        if (this.offSet) {
+                            if (this.tick) {
+                                ctx.fillStyle = '#cceeff'
+                                ctx.fillRect(_x, _y, this.tSize, this.tSize)
+                            }
+                        } else {
+                            if (!this.tick) {
+                                ctx.fillStyle = '#cceeff'
+                                ctx.fillRect(_x, _y, this.tSize, this.tSize)
+                            }
+                        }
+
+                        // 1 - White Pawn 2 - White Rook
+                        // 3 - White Knight 4 - White Bishop
+                        // 5 - White Queen 6 - White King
+                        // 7 - Black King 8 - Black Queen
+                        // 9 - Black Bishop 10 - Black Knight
+                        // 11 - Black Rook 12 - Black Pawn
+                        this.drawTile(_x, _y, this.getTile(c, r))
+
+                    }
+                    this.offSet = (this.offSet == false) ? true : false
+                }
+                // End Board Drawing
+                ////////////////////
+            };
+        }
+
+        Board.prototype.flipBoard = function () {
+            for (var col = 0; col < this.cols; col++) {
+                for (var row = 0; row < this.rows / 2; row++) {
+                    // var row = 0
+                    var tmp = this.getTile(col, row)
+                    var tmp2 = this.getTile(col, 8 - 1 - row)
+                    // console.log(tmp)
+                    this.changeTile(col, row, tmp2)
+                    // console.log(tmp)
+                    // console.log(`Changed ${col+1}/${row+1} to ${tmp2}`)
+                    this.changeTile(col, this.rows - row - 1, tmp)
+                    // console.log(`Changed ${col+1}/${this.rows - row - 1 + 1} to ${tmp}`)
+
+                    // console.log(tmp)
+                }
+                // var row = 0
+                // tmp = this.getTile(col, row)
+                // this.changeTile(col, row, this.getTile(row, 8 - 1 - col))
+                // this.changeTile(col, 8 - 1 - row, tmp)
+            }
+            console.log('flipped')
+            // console.log('\n New Board=', this.b)
+            // return this.b;
+        };
+
+        var board = new Board();
+
+
+        var mPos = {
+            x: 0,
+            y: 0,
+            w: 1,
+            h: 1,
+            mX: 0,
+            mY: 0,
+            dX: 0,
+            dY: 0,
+            dxP: 0,
+            dyP: 0,
+            prevVal: 0,
+
+        }
+
+        function arraysEqual(a, b) {
+            if (a === b) return true;
+            if (a == null || b == null) return false;
+            if (a.length != b.length) return false;
+
+            // If you don't care about the order of the elements inside
+            // the array, you should sort both arrays here.
+            // Please note that calling sort on an array will modify that array.
+            // you might want to clone your array first.
+
+            for (var i = 0; i < a.length; ++i) {
+                console.log(i)
+                if (a[i] !== b[i]) return false;
+            }
+            return true;
+        }
+
+        var currentMoves = []
+
+        document.onmousemove = function (evt) {
+            var cRect = canvas.getBoundingClientRect();
+            mPos.x = evt.clientX - cRect.x
+            mPos.y = evt.clientY - cRect.y
+        }
+
+        var mDown = false
+
+        document.onmousedown = function (evt) {
+            mDown = true
+            mPos.dX = mPos.mX, mPos.dY = mPos.mY
+            mPos.dxP = mPos.x, mPos.dyP = mPos.y
+            mPos.prevVal = board.getTile(mPos.dX, mPos.dY)
+            currentMoves = board.findMoves(mPos.dX, mPos.dY)
+            board.changeTile(mPos.dX, mPos.dY, 0)
+        }
+
+        document.onmouseup = function (evt) {
+            mDown = false
+
+            currentMoves.forEach(_move => {
+                if (arraysEqual(_move, [mPos.mX, mPos.mY])) {
+                    console.log('Valid')
+                    board.changeTile(mPos.mX, mPos.mY, mPos.prevVal)
+                    flipTimer.activate()
+                } else {
+                    board.changeTile(mPos.dX, mPos.dY, mPos.prevVal)
+                }
+            })
+
+            mPos.dX = 0, mPos.dY = 0
+            mPos.prevVal = 0
+        }
+
+        function Timer(_seconds, _func, _args = undefined, _funcObject = undefined) {
+            this.tick = 0;
+            this.maxTick = ~~(_seconds * 60)
+            this.active = false
+            // this.callback = _func
+
+            this.update = function () {
+                if (this.active) {
+                    if (this.tick >= this.maxTick) {
+                        if (_funcObject) _func.call(_funcObject)
+                        else _func()
+                        this.deactivate()
+                        this.tick = 0;
+                    }
+                    this.tick++;
+                }
+            }
+
+            this.activate = function () {
+                this.active = true;
+            }
+
+            this.deactivate = function () {
+                this.active = false;
+            }
+        }
+
+        var timers = []
+
+        var flipTimer = new Timer(0.5, board.flipBoard, [], board)
+        timers.push(flipTimer)
+
+        update()
+
+        function update() {
+            requestAnimationFrame(update);
+
+            mPos.mX = ~~(mPos.x / board.tSize)
+            mPos.mY = ~~(mPos.y / board.tSize)
+
+            var textArr = [`DX/DY/Prev= ${mPos.dX} / ${mPos.dY} / ${mPos.prevVal}`,
+                `MX/MY= ${mPos.mX} / ${mPos.mY}`, `Current Tile Val= ${board.getTile(mPos.mX, mPos.mY)}`,
+                `Prev: ${mPos.prevVal}`
+            ]
+
+
+            timers.forEach(_t => {
+                _t.update();
+            })
+
+            ctx.clearRect(0, 0, gWidth, gHeight)
+
+            ctx.fillStyle = 'white'
+            ctx.fillRect(0, 0, gWidth, gHeight)
+
+            board.drawGrid()
+
+            ctx.strokeStyle = 'green'
+            ctx.strokeRect(mPos.mX * board.tSize, mPos.mY * board.tSize, board.tSize, board.tSize)
+
+            if (mDown) {
+                var _dx = Math.abs(mPos.x - board.tSize / 2)
+                var _dy = Math.abs(mPos.y - board.tSize / 2)
+                // console.log('true')
+                ctx.globalAlpha = 0.6
+                board.drawTile(_dx, _dy, mPos.prevVal)
+
+                ctx.globalAlpha = 1.0
+
+                currentMoves.forEach(function (_m) {
+                    ctx.strokeStyle = 'blue'
+                    ctx.strokeRect(_m[0] * board.tSize, _m[1] * board.tSize, board.tSize, board
+                        .tSize)
+                })
+
+                ctx.fillStyle = 'red'
+                ctx.fillText([_dx, _dy], 0, 75)
+            }
+
+            ctx.fillStyle = 'black'
+            ctx.fillRect(0, 0, gWidth / 2, 15 * textArr.length + 15)
+            textArr.forEach(function (_t, _ind) {
+
+                ctx.fillStyle = 'red'
+                ctx.font = '20px Arial'
+                ctx.fillText(_t, 0, _ind * 15 + 15)
+                // console.log(_ind)
+            })
+            // ctx.fillStyle = 'red'
+            // ctx.font = '20px Arial'
+            // ctx.fillText(`${mPos.dxP}/${mPos.dyP}`, 0, 15)
+            // // ctx.fillText(`${mPos.mX*board.tSize}/${mPos.mY*board.tSize}`, 0, 30)
+            // ctx.fillText(Math.abs(mPos.dxP - (mPos.dX * board.tSize)) + '/' + Math.abs(mPos.dyP - (mPos.mY *
+            //     board
+            //     .tSize)), 0, 45)
+
+
+        }
+    </script>
+</body>
+
+</html>
