@@ -123,11 +123,11 @@
                 'last') ? _type : 'default';
         }
 
-        var test_image = new Image();
-        test_image.src = 'sprites\\test_green_64px.png'
+        // var test_image = new Image();
+        // test_image.src = 'sprites\\test_green_64px.png'
 
         var tower_sprites = new Image();
-        tower_sprites.src = 'sprites\\tower_sprites.png'
+        tower_sprites.src = '..\\sprites\\tower_sprites.png'
 
         var bullets = [];
         var towers = [];
@@ -363,6 +363,13 @@
             towers.forEach((t, tIndex) => {
                 t.update()
             })
+
+            enemyPoints.forEach((p, pIndex) => {
+                ctx.fillStyle = 'green'
+                ctx.fillRect(p.x * grid.tSize + (grid.tSize / 2), p.x * grid.tSize + (grid.tSize / 2), 5, 5)
+                ctx.fillText([p.x * grid.tSize + (grid.tSize / 2), p.x * grid.tSize + (grid.tSize / 2)], 15,
+                    15 + pIndex * 15)
+            });
 
             bullets.forEach((b, bIndex) => {
                 b.update()
